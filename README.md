@@ -251,13 +251,13 @@ RUN chmod +x entrypoint.sh
 
 ENTRYPOINT ["/bin/sh", "/entrypoint.sh"]
 ```
-## frontend - nuxt
-### 시작
+# frontend - nuxt
+## 시작
 
 ```
 npm init nuxt-app <project name>
 ```
-## 폴더구조
+### 폴더구조
 ```
 - assets
 - components
@@ -266,7 +266,8 @@ npm init nuxt-app <project name>
 - static
 - target
 ```
-### vscode- vetur 설정
+## 환경 설정
+### vscode 포매터- vetur/prettier설정
 - vscode extension
 
 ![](images/1-1.PNG)
@@ -407,65 +408,92 @@ export default {
 };
 
 ```
-- 환경 설정
-- axios - proxy 설정
-    - nuxt.config.js
-    ```js
-    const CUSTOM_BASE_URL =
-    process.env.NODE_ENV === "production"
-        ? process.env.BASE_URL
-        : "http://localhost:8081";
-    const CUSTOM_API_BASE_URL =
-    process.env.NODE_ENV === "production"
-        ? process.env.API_BASE_URL
-        : "http://localhost:8085/api";
-    export default {
-        ...
-        publicRuntimeConfig: {
-            BASE_URL: CUSTOM_BASE_URL,
-            API_BASE_URL: CUSTOM_API_BASE_URL,
-            axios: {
-            proxy: true,
-            baseURL: CUSTOM_BASE_URL,
-            },
+#### 1. axios - proxy 설정
+- nuxt.config.js
+```js
+const CUSTOM_BASE_URL =
+process.env.NODE_ENV === "production"
+    ? process.env.BASE_URL
+    : "http://localhost:8081";
+const CUSTOM_API_BASE_URL =
+process.env.NODE_ENV === "production"
+    ? process.env.API_BASE_URL
+    : "http://localhost:8085/api";
+export default {
+    ...
+    publicRuntimeConfig: {
+        BASE_URL: CUSTOM_BASE_URL,
+        API_BASE_URL: CUSTOM_API_BASE_URL,
+        axios: {
+        proxy: true,
+        baseURL: CUSTOM_BASE_URL,
         },
-        proxy: {
-            "/api": {
-            target: CUSTOM_API_BASE_URL,
-            pathRewrite: { "/api/": "/" },
-            changeOrigin: true,
-            },
+    },
+    proxy: {
+        "/api": {
+        target: CUSTOM_API_BASE_URL,
+        pathRewrite: { "/api/": "/" },
+        changeOrigin: true,
         },
-        // Modules: https://go.nuxtjs.dev/config-modules
-        modules: [
-            "@nuxtjs/axios",
-            "@nuxtjs/proxy",
-            
-        ],
-    }
+    },
+    // Modules: https://go.nuxtjs.dev/config-modules
+    modules: [
+        "@nuxtjs/axios",
+        "@nuxtjs/proxy",
+        
+    ],
+}
 
-    ```
-
-
-- nuxt 속도 개선
-  - nuxt.config.js
-    ```js
-    export default {
-        ...
-        // ssr을 사용하면 프론트엔드의 사양때문에 느려지는 것을 완화 한다.
-        ssr: true, 
-        // 빌드 속도 개선 - components: true일 경우 component import를 자동으로 해주나 빌드가 매우 느려질 수 있다.
-        components: false 
-        ...
-    }
-    ```
+```
 
 
-### middleware 설정  
+#### 2. nuxt 속도 개선
+- nuxt.config.js
+  ```js
+  export default {
+      ...
+      // ssr을 사용하면 프론트엔드의 사양때문에 느려지는 것을 완화 한다.
+      ssr: true, 
+      // 빌드 속도 개선 - components: true일 경우 component import를 자동으로 해주나 빌드가 매우 느려질 수 있다.
+      components: false 
+      ...
+  }
+  ```
+
+
+#### 3. middleware 설정  
+
+- store/index.js
+```js
+export const state = () => ({
+    loading: false,
+    authenticated: false
+});
+
+export const mutations = {
+    setLoading(state, loading) {
+        state.loading = loading;
+    },
+    setAuthenticated(state, authenticated) {
+        state.authenticated = authenticated;
+    },
+};
+export const actions = {
+  LOGIN({ state, commit}, form) {
+      
+      commit("setLoading", true);
+      // 로그인 성공
+      commit("setAuthenticated", true);
+      commit("setLoading", false);
+  }
+}
+
+```
+- middlewares/authenticated.js
 ```js
 export default function ({ store, redirect, route }) {
     //If the user is not authenticated
-    // store에서 athenticated 여부 확인
+    // store에서 athenticated 
     // 로그인 안됐을 시에
     
     if (!store.state.authenticated) {
@@ -478,10 +506,45 @@ export default function ({ store, redirect, route }) {
     
 }
 ```
-  - localhost:8081/로 접속하면 로그인 됐을 시는 /rgst/appl/list로 redirect 됨
+- pages/index.vue
+```vue
+<template>
+  <div>
+    <Nuxt />
+  </div>
+</template>
+
+<script>
+// import axios from "axios";
+export default {
+  middleware: "authenticated",
+  async asyncData() {
+   
+  },
+  computed: {
+    loading: {
+      get() {
+        return this.$store.state.loading;
+      },
+      set(value) {
+        this.$store.commit("setLoading", value);
+      },
+    },
+  },
+  beforeCreate() {},
+ 
+};
+</script>
+<style>
+/** 생략*/
+</style>
+
+```
+
+- localhost:8081/로 접속하면 로그인 됐을 시 /rgst/appl/list로 redirect 됨
     ![](images/2-4.PNG)
 
-### layout 설정
+#### 4.layout 설정
 - layouts/default.vue 
 ```vue
 <template>
@@ -579,7 +642,7 @@ export default {
 
 ![](images/2-5.PNG)
 
-### ie11 문제 해결
+#### 5. ie11 문제 해결
   - babel 설정 ( nuxt.config.js)
   ```js
   export default{
@@ -638,138 +701,216 @@ export default {
     - [./plugins/shadydom-wo-click.js](files/shadydom-wo-click.js)
 
   
-- vuetify default style 변경
-    - nuxt.config.js
-    ```js
-    export default {
-        
-        buildModules: [["@nuxtjs/vuetify", { treeShake: true }]],
-        vuetify: {
-            treeshake: true,
-            defaultAssets: false,
-            customVariables: ['~/assets/variables.scss']
-        },
-    }
-    ```
-    - ./assets/variables.scss
-    ```scss
-    /* font */
-    @font-face{
-        font-family: 'NanumGothic';
-        font-style: normal;
-        font-weight: bold;
-        src: url('/resources/css/font/NanumGothic.eot');     
-        src: local('?'), url('/resources/css/font/NanumGothic.woff') format('woff'), url('/resources/css/font/NanumGothic.ttf') format('truetype');
-    }
-
-    @font-face{
-        font-family: 'NanumGothicBold';
-        font-style: normal;
-        font-weight: bold;
-        src: url('/resources/css/font/NanumGothicBold.eot');     
-        src: local('?'), url('/resources/css/font/NanumGothicBold.woff') format('woff'), url('/resources/css/font/NanumGothicBold.ttf') format('truetype');
-    }
-    $body-font-family: "NanumGothic";
-    $heading-font-family: "NanumGothic";
-    
-    @import("~vuetify/src/styles/styles.sass");
-    ```
-### components
-- pagination
-    - 결과
-      > ![](images/2-1.PNG)
-      > ![](images/2-2.PNG)
-    - components/common/NowrmsPagination.vue
+#### 6. vuetify default style 변경
+  - nuxt.config.js
+  ```js
+  export default {
       
-        ```vue
-        <template>
-            <!-- 페이지 네비게이션 -->
-            <div id="navi">
-                <input
-                v-if="length!=0 && value >1"
-                @click="setPageNum(1)"
-                type="button" class="btn_01" name="navi_first" value="<<" >
+      buildModules: [["@nuxtjs/vuetify", { treeShake: true }]],
+      vuetify: {
+          treeshake: true,
+          defaultAssets: false,
+          customVariables: ['~/assets/variables.scss']
+      },
+  }
+  ```
+  - ./assets/variables.scss
+  ```scss
+  /* font */
+  @font-face{
+      font-family: 'NanumGothic';
+      font-style: normal;
+      font-weight: bold;
+      src: url('/resources/css/font/NanumGothic.eot');     
+      src: local('?'), url('/resources/css/font/NanumGothic.woff') format('woff'), url('/resources/css/font/NanumGothic.ttf') format('truetype');
+  }
 
-                <p>
-                    <template v-for="i in pageRange">
-                        
-                        <span v-if="value ===i" 
-                        @click="setPageNum(i)" 
-                        class="page_crt">{{i}}</span>
-                        <span v-else @click="setPageNum(i)" >{{i}}</span>
-                        
-                    </template>
-                </p>
-                <input 
-                v-if="length!=0 && value <length"
-                @click="setPageNum(length)"
-                type="button" class="btn_01" name="navi_last" value=">>">
-            </div>
-        </template>
-        <script>
-            export default {
-                props:{
-                    value: Number, // current page
-                    length: Number, // total page
-                    totalVisible:Number, // 보이는 page
-                },
-                computed: {
-                    pageRange(){
-                        const pageRange = [];
-                        if(this.value && this.length && this.totalVisible){
-                            let startPage = Math.floor(this.length/ this.totalVisible) + 1;
-                            for(let i=startPage; i<= this.value + this.totalVisible; i++){
+  @font-face{
+      font-family: 'NanumGothicBold';
+      font-style: normal;
+      font-weight: bold;
+      src: url('/resources/css/font/NanumGothicBold.eot');     
+      src: local('?'), url('/resources/css/font/NanumGothicBold.woff') format('woff'), url('/resources/css/font/NanumGothicBold.ttf') format('truetype');
+  }
+  $body-font-family: "NanumGothic";
+  $heading-font-family: "NanumGothic";
+  
+  @import("~vuetify/src/styles/styles.sass");
+  ```
+# components, store 사용하기
+## 1. pagination
 
-                                if(i<= this.length) pageRange.push(i);
-                                else break;
-                                
-                            }
-                            return pageRange;
-                        }else{
-                            return [1];
-                        }
+### 구현하기
+1. components/common/NowrmsPagination.vue
+   
+```vue
+<template>
+    <!-- 페이지 네비게이션 -->
+    <div id="navi">
+        <input
+        v-if="length!=0 && value >1"
+        @click="setPageNum(1)"
+        type="button" class="btn_01" name="navi_first" value="<<" >
+
+        <p>
+            <template v-for="i in pageRange">
+                
+                <span v-if="value ===i" 
+                @click="setPageNum(i)" 
+                class="page_crt">{{i}}</span>
+                <span v-else @click="setPageNum(i)" >{{i}}</span>
+                
+            </template>
+        </p>
+        <input 
+        v-if="length!=0 && value <length"
+        @click="setPageNum(length)"
+        type="button" class="btn_01" name="navi_last" value=">>">
+    </div>
+</template>
+<script>
+    export default {
+        props:{
+            value: Number, // current page
+            length: Number, // total page
+            totalVisible:Number, // 보이는 page
+        },
+        computed: {
+            pageRange(){
+                const pageRange = [];
+                if(this.value && this.length && this.totalVisible){
+                    let startPage = Math.floor(this.length/ this.totalVisible) + 1;
+                    for(let i=startPage; i<= this.value + this.totalVisible; i++){
+
+                        if(i<= this.length) pageRange.push(i);
+                        else break;
+                        
                     }
-                },
-                methods:{
-                    setPageNum(number){
-                        this.$emit('input', number);
-                    }
+                    return pageRange;
+                }else{
+                    return [1];
                 }
             }
-        </script>
-        ```
-                
-        ```vue
-        <template>
-                <!-- 페이지 네비게이션 -->
-            <NowrmsPagination
-            v-model="pageNum"
-            :length="totalPage"
-            :total-visible="resultCnt"
-            />
-        </div>
-        </template>
-        <script>
-        import NowrmsPagination from "@/components/common/NowrmsPagination.vue";
-        export default {
-            middleware: "authenticated",
-            components: { NowrmsPagination},
-            
-            computed: {
-                pageNum: {
-                get() {
-                    return this.$store.state.rgst.applComplist.page_num;
-                },
-                set(value) {
-                    this.$store.commit("rgst/applComplist/setPageNum", value);
-                },
-                },
-                totalPage() {
-                return this.$store.state.rgst.applComplist.totalPage;
-                },
-                resultCnt() {
-                return this.$store.state.rgst.applComplist.resultCnt;
-                },
+        },
+        methods:{
+            setPageNum(number){
+                this.$emit('input', number);
+            }
+        }
+    }
+</script>
+<style>
+input.btn_01 {
+  padding: 0 7px;
+  *padding: 0;
+  text-align: center;
+  border: 1px solid #2b2b2b;
+  background-color: #5f5f5f;
+  color: #fff;
+  cursor: pointer;
+  border-radius: 2px;
+  font-size: 11px; /*line-height:150%;*/
+}
+
+input.btn_01:hover {
+  padding: 0 7px;
+  *padding: 0;
+  text-align: center;
+  border: 1px solid #2b2b2b;
+  background-color: #000000;
+  color: #fff;
+  cursor: pointer;
+  border-radius: 2px;
+  font-size: 11px; /*line-height:150%;*/
+}
+input.btn_01:active {
+  padding: 0 7px;
+  *padding: 0;
+  text-align: center;
+  border: 1px solid #2b2b2b;
+  background-color: #5f5f5f;
+  color: #fff;
+  cursor: pointer;
+  border-radius: 2px;
+  font-size: 11px; /*line-height:150%;*/
+}
+td input.btn_01,
+h3 input.btn_01,
+div input.btn_01 {
+  padding: 0 7px;
+  *padding: 0;
+  text-align: center;
+  border: 1px solid #2b2b2b;
+  background-color: #5f5f5f;
+  color: #fff;
+  cursor: pointer;
+  border-radius: 2px;
+  font-size: 11px; /*line-height:150%;*/
+}
+</style>
+```
+
+2. pages/rgst/appl/list.vue   
+```vue
+<template>
+        <!-- 페이지 네비게이션 -->
+    <NowrmsPagination
+    v-model="pageNum"
+    :length="totalPage"
+    :total-visible="resultCnt"
+    />
+</div>
+</template>
+<script>
+import NowrmsPagination from "@/components/common/NowrmsPagination.vue";
+export default {
+    middleware: "authenticated",
+    components: { NowrmsPagination},
+    
+    computed: {
+        pageNum: {
+            get() {
+                return this.$store.state.applicationList.page_num;
             },
-        };
-        ```
+            set(value) {
+                this.$store.commit("applicationList/setPageNum", value);
+            },
+        },
+        totalPage() {
+            return this.$store.state.applicationList.totalPage;
+        },
+        resultCnt() {
+            return this.$store.state.applicationList.resultCnt;
+        },
+  },
+};
+```
+
+1. store/applicationList.js
+
+```js
+export const state = () => ({
+    // 페이지 네비게이션 번호
+    page_num: 1,
+    totalPage: 3,
+    //  한 페이지에 보여줄 목록 수
+    resultCnt: 15,
+    
+});
+
+export const mutations = {
+    setPageNum(state, pageNum) {
+        state.page_num = pageNum;
+    },
+   
+};
+
+export const actions = {
+};
+```
+
+    
+
+### 결과
+> ![](images/2-1.PNG)
+> ![](images/2-2.PNG)
