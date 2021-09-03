@@ -167,7 +167,90 @@ version: 6.8
 ```
 진행 중
 ```
+## 전체 폴더
 
+```
+- frontend
+- backend
+    - uploads
+    - ...
+Dockerfile
+.dev-build.sh
+```
+- dev-build.sh
+```sh
+docker stop nowrms-admin
+
+docker rm nowrms-admin
+
+docker build --build-arg ENVIRONMENT=dev -t nowrms-admin:dev .
+
+set vue_admin_dir=$(pwd)
+
+docker run -d -p 80:80 \
+--name=nowrms-admin \
+-v /`pwd`/backend/uploads/:/uploads \
+nowrms-admin:dev 
+
+docker logs -f nowrms-admin 
+```
+- entrypoint.sh
+```
+#!/bin/sh
+java -Dfile.encoding=UTF-8 \
+    -Djava.security.egd=file:/dev/./urandom \
+    -Djava.net.preferIPv4Stack=true \
+    -jar /ssanijaro/app.jar
+```
+
+```Dockerfile
+# vue build
+FROM node:12.18.2 as front
+RUN mkdir -p /app/frontend
+COPY /frontend /app/frontend
+WORKDIR /app/frontend
+ARG ENVIRONMENT
+ENV NODE_ENV=production
+RUN npm install && npm run ${ENVIRONMENT}-build
+
+
+# spring build
+FROM gradle:6.6.1-jdk8 AS backend
+RUN echo 'nexusUsername=<nexus User name>\n\
+nexusPassword=<nexus password>\n' \
+    > /home/gradle/gradle.properties
+
+COPY --from=front /app/frontend/dist front
+COPY backend/build.gradle .
+COPY backend/settings.gradle .
+COPY backend/src src
+RUN rm -rf src/main/resources/static/* && mkdir -p src/main/resources/static
+RUN mv front/* src/main/resources/static/
+ARG ENVIRONMENT
+RUN gradle -Pprofile=${ENVIRONMENT} bootjar
+
+
+# vue + spring build
+# FROM centos
+FROM adoptopenjdk/openjdk8
+# FROM ls1tbuxh.private-ncr.fin-ntruss.com/centos7/ssanijaro-backend-base:1.1
+COPY --from=backend /home/gradle/build/libs/*.jar /ssanijaro/app.jar
+
+RUN mkdir /uploadFile
+
+ARG ENVIRONMENT
+ENV SPRING_PROFILES_ACTIVE=${ENVIRONMENT}
+ENV SYSTEM_ENV=${ENVIRONMENT}
+
+EXPOSE 80
+
+# ENTRYPOINT ["java","-Dfile.encoding=UTF-8","-Djava.security.egd=file:/dev/./urandom", "-Djava.net.preferIPv4Stack=true", "-jar", "/ssanijaro/app.jar"]
+
+COPY entrypoint.sh /
+RUN chmod +x entrypoint.sh
+
+ENTRYPOINT ["/bin/sh", "/entrypoint.sh"]
+```
 ## frontend - nuxt
 ### 시작
 
@@ -560,4 +643,3 @@ export default function ({ store, redirect, route }) {
             },
         };
         ```
-1. docker 설정
