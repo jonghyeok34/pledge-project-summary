@@ -461,7 +461,7 @@ export default {
     ```
 
 
-- middleware 설정  
+### middleware 설정  
 ```js
 export default function ({ store, redirect, route }) {
     //If the user is not authenticated
@@ -481,8 +481,105 @@ export default function ({ store, redirect, route }) {
   - localhost:8081/로 접속하면 로그인 됐을 시는 /rgst/appl/list로 redirect 됨
     ![](images/2-4.PNG)
 
-- layout 설정
-- ie11 문제 해결
+### layout 설정
+- layouts/default.vue 
+```vue
+<template>
+  <v-app id="wrapper">
+    <Snackbar></Snackbar>
+
+    <HeaderMenu />
+
+    <!-- <Login/> -->
+    <Nuxt />
+    <v-overlay :value="loading">
+      <v-progress-circular indeterminate v-show="loading"></v-progress-circular>
+    </v-overlay>
+    <div id="footer">
+      <div class="foot"><p>Copyrightⓒ Finotek., All rights reserved</p></div>
+    </div>
+  </v-app>
+</template>
+
+<script>
+// import axios from "axios";
+import SnackBar from "~/components/Snackbar.vue";
+import HeaderMenu from "~/components/HeaderMenu.vue";
+export default {
+  components: { SnackBar, HeaderMenu },
+  
+  computed: {
+    loading: {
+      get() {
+        return this.$store.state.loading;
+      },
+      set(value) {
+        this.$store.commit("setLoading", value);
+      },
+    },
+  },
+  beforeCreate() {},
+ 
+};
+</script>
+```
+- pages/rgst/appl/complist
+```vue
+<template>
+  <div id="container">
+    <h1>등기완료목록</h1>
+    <div class="inputTitle">
+      <h3 style="border-bottom: none">&gt; 검색 조건</h3>
+    </div>
+    <application-search-form></application-search-form>
+
+    <div class="inputData" style="text-align: right; display: none">
+      <input
+        type="button"
+        class="btn_01"
+        name="btn_print"
+        style=""
+        value="엑셀다운로드"
+      />
+    </div>
+    <div class="inputTitle">
+      <h3 style="border-bottom: none">
+        &gt; 검색 결과 &nbsp;<span style="color: red; font-weight: bold"
+          >※ 등기완료일자 기준 90일이 경과한 경우, 등기완료문서를 다운로드 할 수
+          없습니다.</span
+        >
+        <div style="float: right">
+          <input
+            type="button"
+            value="일괄 다운로드"
+            id="btn_down_all"
+            name="btn_down_all"
+          />
+        </div>
+      </h3>
+    </div>
+
+    <application-list-table></application-list-table>
+    <!-- 페이지 네비게이션 -->
+    <NowrmsPagination
+      v-model="pageNum"
+      :length="totalPage"
+      :total-visible="resultCnt"
+    />
+  </div>
+</template>
+<script>
+export default {
+    ...
+}
+</script>
+```
+
+- `<Nuxt/>`부분에 pages/rgst/appl/complist 부분이 채워짐
+
+![](images/2-5.PNG)
+
+### ie11 문제 해결
   - babel 설정 ( nuxt.config.js)
   ```js
   export default{
@@ -500,50 +597,83 @@ export default function ({ store, redirect, route }) {
   
   }
   ```
-  - /plugins/array.js
-  ```js
-  if ( ![].fill)  {
-    Array.prototype.fill = function( value ) {
   
-      var O = Object( this );
-      var len = parseInt( O.length, 10 );
-      var start = arguments[1];
-      var relativeStart = parseInt( start, 10 ) || 0;
-      var k = relativeStart < 0
-              ? Math.max( len + relativeStart, 0) 
-              : Math.min( relativeStart, len );
-      var end = arguments[2];
-      var relativeEnd = end === undefined
-                        ? len 
-                        : ( parseInt( end)  || 0) ;
-      var final = relativeEnd < 0
-                  ? Math.max( len + relativeEnd, 0 )
-                  : Math.min( relativeEnd, len );
-  
-      for (; k < final; k++) {
-          O[k] = value;
-      }
-  
-      return O;
-    };
-  }
-  ```
-  - /plugins/math.js
-  ```js
-  Math.cbrt = Math.cbrt || function(x) {
-    var y = Math.pow(Math.abs(x), 1/3);
-    return x < 0 ? -y : y;
-  };
-  ```
-  - [./plugins/shadydom-wo-click.js](files/shadydom-wo-click.js)
   - vuetify 설정 
     - shadowydom, math.cbrt, array.fill
+    - /plugins/array.js
+    ```js
+    if ( ![].fill)  {
+        Array.prototype.fill = function( value ) {
+    
+        var O = Object( this );
+        var len = parseInt( O.length, 10 );
+        var start = arguments[1];
+        var relativeStart = parseInt( start, 10 ) || 0;
+        var k = relativeStart < 0
+                ? Math.max( len + relativeStart, 0) 
+                : Math.min( relativeStart, len );
+        var end = arguments[2];
+        var relativeEnd = end === undefined
+                            ? len 
+                            : ( parseInt( end)  || 0) ;
+        var final = relativeEnd < 0
+                    ? Math.max( len + relativeEnd, 0 )
+                    : Math.min( relativeEnd, len );
+    
+        for (; k < final; k++) {
+            O[k] = value;
+        }
+    
+        return O;
+        };
+    }
+    ```
+    - /plugins/math.js
+    ```js
+    Math.cbrt = Math.cbrt || function(x) {
+        var y = Math.pow(Math.abs(x), 1/3);
+        return x < 0 ? -y : y;
+    };
+    ```
+    - [./plugins/shadydom-wo-click.js](files/shadydom-wo-click.js)
 
   
-- vuetify 설정
-  - default style 변경
+- vuetify default style 변경
+    - nuxt.config.js
+    ```js
+    export default {
+        
+        buildModules: [["@nuxtjs/vuetify", { treeShake: true }]],
+        vuetify: {
+            treeshake: true,
+            defaultAssets: false,
+            customVariables: ['~/assets/variables.scss']
+        },
+    }
+    ```
+    - ./assets/variables.scss
+    ```scss
+    /* font */
+    @font-face{
+        font-family: 'NanumGothic';
+        font-style: normal;
+        font-weight: bold;
+        src: url('/resources/css/font/NanumGothic.eot');     
+        src: local('?'), url('/resources/css/font/NanumGothic.woff') format('woff'), url('/resources/css/font/NanumGothic.ttf') format('truetype');
+    }
 
-
+    @font-face{
+        font-family: 'NanumGothicBold';
+        font-style: normal;
+        font-weight: bold;
+        src: url('/resources/css/font/NanumGothicBold.eot');     
+        src: local('?'), url('/resources/css/font/NanumGothicBold.woff') format('woff'), url('/resources/css/font/NanumGothicBold.ttf') format('truetype');
+    }
+    $body-font-family: "NanumGothic";
+    $heading-font-family: "NanumGothic";
+    
+    @import("~vuetify/src/styles/styles.sass");
+    ```
 ### components
 - pagination
     - 결과
