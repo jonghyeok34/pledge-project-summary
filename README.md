@@ -463,99 +463,101 @@ export default function ({ store, redirect, route }) {
 
 ### components
 - pagination
+    - 결과
+      > ![](images/2-1.PNG)
+      > ![](images/2-2.PNG)
     - components/common/NowrmsPagination.vue
-![](images/2-1.PNG)
-![](images/2-2.PNG)
-```vue
-<template>
-    <!-- 페이지 네비게이션 -->
-    <div id="navi">
-        <input
-        v-if="length!=0 && value >1"
-        @click="setPageNum(1)"
-        type="button" class="btn_01" name="navi_first" value="<<" >
+      
+        ```vue
+        <template>
+            <!-- 페이지 네비게이션 -->
+            <div id="navi">
+                <input
+                v-if="length!=0 && value >1"
+                @click="setPageNum(1)"
+                type="button" class="btn_01" name="navi_first" value="<<" >
 
-        <p>
-            <template v-for="i in pageRange">
-                
-                <span v-if="value ===i" 
-                @click="setPageNum(i)" 
-                class="page_crt">{{i}}</span>
-                <span v-else @click="setPageNum(i)" >{{i}}</span>
-                
-            </template>
-        </p>
-        <input 
-        v-if="length!=0 && value <length"
-        @click="setPageNum(length)"
-        type="button" class="btn_01" name="navi_last" value=">>">
-    </div>
-</template>
-<script>
-    export default {
-        props:{
-            value: Number, // current page
-            length: Number, // total page
-            totalVisible:Number, // 보이는 page
-        },
-        computed: {
-            pageRange(){
-                const pageRange = [];
-                if(this.value && this.length && this.totalVisible){
-                    let startPage = Math.floor(this.length/ this.totalVisible) + 1;
-                    for(let i=startPage; i<= this.value + this.totalVisible; i++){
-
-                        if(i<= this.length) pageRange.push(i);
-                        else break;
+                <p>
+                    <template v-for="i in pageRange">
                         
+                        <span v-if="value ===i" 
+                        @click="setPageNum(i)" 
+                        class="page_crt">{{i}}</span>
+                        <span v-else @click="setPageNum(i)" >{{i}}</span>
+                        
+                    </template>
+                </p>
+                <input 
+                v-if="length!=0 && value <length"
+                @click="setPageNum(length)"
+                type="button" class="btn_01" name="navi_last" value=">>">
+            </div>
+        </template>
+        <script>
+            export default {
+                props:{
+                    value: Number, // current page
+                    length: Number, // total page
+                    totalVisible:Number, // 보이는 page
+                },
+                computed: {
+                    pageRange(){
+                        const pageRange = [];
+                        if(this.value && this.length && this.totalVisible){
+                            let startPage = Math.floor(this.length/ this.totalVisible) + 1;
+                            for(let i=startPage; i<= this.value + this.totalVisible; i++){
+
+                                if(i<= this.length) pageRange.push(i);
+                                else break;
+                                
+                            }
+                            return pageRange;
+                        }else{
+                            return [1];
+                        }
                     }
-                    return pageRange;
-                }else{
-                    return [1];
+                },
+                methods:{
+                    setPageNum(number){
+                        this.$emit('input', number);
+                    }
                 }
             }
-        },
-        methods:{
-            setPageNum(number){
-                this.$emit('input', number);
-            }
-        }
-    }
-</script>
-```
-  
-```vue
-<template>
-        <!-- 페이지 네비게이션 -->
-    <NowrmsPagination
-      v-model="pageNum"
-      :length="totalPage"
-      :total-visible="resultCnt"
-    />
-  </div>
-</template>
-<script>
-import NowrmsPagination from "@/components/common/NowrmsPagination.vue";
-export default {
-  middleware: "authenticated",
-  components: { NowrmsPagination},
-  
-  computed: {
-    pageNum: {
-      get() {
-        return this.$store.state.rgst.applComplist.page_num;
-      },
-      set(value) {
-        this.$store.commit("rgst/applComplist/setPageNum", value);
-      },
-    },
-    totalPage() {
-      return this.$store.state.rgst.applComplist.totalPage;
-    },
-    resultCnt() {
-      return this.$store.state.rgst.applComplist.resultCnt;
-    },
-  },
-};
-```
+        </script>
+        ```
+                
+        ```vue
+        <template>
+                <!-- 페이지 네비게이션 -->
+            <NowrmsPagination
+            v-model="pageNum"
+            :length="totalPage"
+            :total-visible="resultCnt"
+            />
+        </div>
+        </template>
+        <script>
+        import NowrmsPagination from "@/components/common/NowrmsPagination.vue";
+        export default {
+            middleware: "authenticated",
+            components: { NowrmsPagination},
+            
+            computed: {
+                pageNum: {
+                get() {
+                    return this.$store.state.rgst.applComplist.page_num;
+                },
+                set(value) {
+                    this.$store.commit("rgst/applComplist/setPageNum", value);
+                },
+                },
+                totalPage() {
+                return this.$store.state.rgst.applComplist.totalPage;
+                },
+                resultCnt() {
+                return this.$store.state.rgst.applComplist.resultCnt;
+                },
+            },
+        };
+        ```
 1. docker 설정
