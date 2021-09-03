@@ -1,8 +1,9 @@
 # 질권 설정 프로젝트 정리
 
 ##  빌드하기 : nexus repository
-### 전체 구조
+### 빌드 구조
 ![](images/0-1.jpg)
+### 
 
 #### 1.nexus docker 설치
 - 기본 nexus docker 올리기
@@ -386,7 +387,6 @@ export default {
   modules: [
     "@nuxtjs/axios",
     "@nuxtjs/proxy",
-    
   ],
 
   // Build Configuration: https://go.nuxtjs.dev/config-build
@@ -409,6 +409,17 @@ export default {
 
 ```
 #### 1. axios - proxy 설정
+- proxy를 사용하는 이유
+```
+1. backend와, frontend가 url:port가 서로 다르다. (local 서버에서 구동할 경우 다른 것이 기본.)
+2. <frontend url>/api --> <backend url> 방식으로 proxy를 이용 해주면 편하게 url request를 이용 가능하다.
+3. 예
+  - http://localhost:8081(프론트엔드), http://localhost:8085 - 백엔드 주소 일때
+  - publicRuntimeConfig.axios.baseURL = 프론트엔드 url로 설정하고, publicRuntimeConfig.axios.proxy를 true로 하면 proxy 가능하게 만든다.
+  - proxy 에서 sub url이 /api 로 오는 것을 target을 http://localhost:8085로 잡고, /api/ 를 / 로 바꿔주고, changeOrigin을 true로 해주어 baseUrl이 변할 수 있게 한다.
+  - 결과: http://localhost:8081/api/aaaa 요청 --> http://localhost:8085/aaaa
+
+```
 - nuxt.config.js
 ```js
 const CUSTOM_BASE_URL =
@@ -425,8 +436,8 @@ export default {
         BASE_URL: CUSTOM_BASE_URL,
         API_BASE_URL: CUSTOM_API_BASE_URL,
         axios: {
-        proxy: true,
-        baseURL: CUSTOM_BASE_URL,
+          proxy: true,
+          baseURL: CUSTOM_BASE_URL,
         },
     },
     proxy: {
@@ -440,19 +451,18 @@ export default {
     modules: [
         "@nuxtjs/axios",
         "@nuxtjs/proxy",
-        
     ],
 }
 
 ```
-
+  
 
 #### 2. nuxt 속도 개선
 - nuxt.config.js
   ```js
   export default {
       ...
-      // ssr을 사용하면 프론트엔드의 사양때문에 느려지는 것을 완화 한다.
+      // ssr을 사용하면 프론트엔드의 사양때문에 느려지는 것을 완화 한다. - 다만 ssr은 server를 node.js로 설정해야 한다. (https://nuxtjs.org/docs/2.x/concepts/server-side-rendering)
       ssr: true, 
       // 빌드 속도 개선 - components: true일 경우 component import를 자동으로 해주나 빌드가 매우 느려질 수 있다.
       components: false 
